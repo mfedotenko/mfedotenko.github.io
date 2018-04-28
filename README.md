@@ -1,102 +1,66 @@
-Firebase Cloud Messaging Quickstart
-===================================
+# Web Push Notifications with Realtime
+This project shows how to use the Web Push Notifications API in a website, allowing easy engagement with users that are currently not browsing the website. This project uses the Realtime Messaging JavaScript SDK and requires Chrome 50+ or Firefox 44+.
 
-The Firebase Cloud Messaging quickstart demonstrates how to:
-- Request permission to send app notifications to the user.
-- Receive FCM messages using the Firebase Cloud Messaging JavaScript SDK.
+## Realtime + Web Push Notifications guide
 
-Introduction
-------------
+- Register to get your free Realtime Messaging application key at [https://accounts.realtime.co/signup/](https://accounts.realtime.co/signup/)
 
-[Read more about Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging/)
+- Create a Firebase Cloud Messaging project. [Follow this tutorial](http://messaging-public.realtime.co/documentation/starting-guide/mobilePushGCM.html).
 
-Getting Started
----------------
+- Open the `index.html` file and replace the Firebase initialization code shown below with the configuration code you got in the previous step:
 
-1. Create your project on the [Firebase Console](https://console.firebase.google.com).
-1. You must have the [Firebase CLI](https://firebase.google.com/docs/cli/) installed. If you don't have it install it with `npm install -g firebase-tools` and then configure it with `firebase login`.
-1. On the command line run `firebase use --add` and select the Firebase project you have created.
-1. On the command line run `firebase serve -p 8081` using the Firebase CLI tool to launch a local server.
-1. Open [http://localhost:8081](http://localhost:8081) in your browser.
-4. Click **REQUEST PERMISSION** button to request permission for the app to send notifications to the browser.
-5. Use the generated Instance ID token (IID Token) to send an HTTP request to FCM that delivers the message to the web application, inserting appropriate values for [`YOUR-SERVER-KEY`](https://console.firebase.google.com/project/_/settings/cloudmessaging) and `YOUR-IID-TOKEN`.
+		  <!-- START INITIALIZATION CODE -->
+		  <script src="https://www.gstatic.com/firebasejs/3.5.0/firebase.js"></script>
+		  <script>
+		    // Initialize Firebase
+		    var config = {
+		      ...
+		    };
+		    firebase.initializeApp(config);
+		  </script>
+		  <!-- END INITIALIZATION CODE -->
 
-### HTTP
-```
-POST /fcm/send HTTP/1.1
-Host: fcm.googleapis.com
-Authorization: key=YOUR-SERVER-KEY
-Content-Type: application/json
+- In the `index.js` file replace the Realtime demo application key (K4xqxB) with your own Realtime application key:
 
-{
-  "notification": {
-    "title": "Portugal vs. Denmark",
-    "body": "5 to 1",
-    "icon": "firebase-logo.png",
-    "click_action": "http://localhost:8081"
-  },
-  "to": "YOUR-IID-TOKEN"
-}
-```
+		var RealtimeAppKey = "K4xqxB"; 
+	
+- Edit the `service-worker.js` file enter your Firebase Sender ID in the `messagingSenderId` property:
 
-### Fetch
-```js
-var key = 'YOUR-SERVER-KEY';
-var to = 'YOUR-IID-TOKEN';
-var notification = {
-  'title': 'Portugal vs. Denmark',
-  'body': '5 to 1',
-  'icon': 'firebase-logo.png',
-  'click_action': 'http://localhost:8081'
-};
+		firebase.initializeApp({
+		  'messagingSenderId': '915139563807'
+		});
 
-fetch('https://fcm.googleapis.com/fcm/send', {
-  'method': 'POST',
-  'headers': {
-    'Authorization': 'key=' + key,
-    'Content-Type': 'application/json'
-  },
-  'body': JSON.stringify({
-    'notification': notification,
-    'to': to
-  })
-}).then(function(response) {
-  console.log(response);
-}).catch(function(error) {
-  console.error(error);
-})
-```
+- Map a webserver to folder where you have cloned this repository, open http://localhost/index.html in your Chrome/Firefox browser and try it out. If it doesn't work as expected have a look at the limitations and troubleshooting sections below.                           
+		
 
-### cURL
-```
-curl -X POST -H "Authorization: key=YOUR-SERVER-KEY" -H "Content-Type: application/json" -d '{
-  "notification": {
-    "title": "Portugal vs. Denmark",
-    "body": "5 to 1",
-    "icon": "firebase-logo.png",
-    "click_action": "http://localhost:8081"
-  },
-  "to": "YOUR-IID-TOKEN"
-}' "https://fcm.googleapis.com/fcm/send"
-```
+## Limitations
+1. This will only work on Chrome 50+ and Firefox 44+
+2. If you are not using localhost you must use the https protocol (it will work on localhost with http)
+3. At least one Chrome/Firefox tab must be opened in order to receive push notifications 
 
-### App focus
-When the app has the browser focus, the received message is handled through
-the `onMessage` callback in `index.html`. When the app does not have browser
-focus then the `setBackgroundMessageHandler` callback in `firebase-messaging-sw.js`
-is where the received message is handled.
+## Troubleshooting
 
-The browser gives your app focus when both:
+* If you get the following error message it means you have changed the `gcm_sender_id` in your manifest.json file. Please update your manifest and enter the exact value shown in the message:  
 
-1. Your app is running in the currently selected browser tab.
-2. The browser tab's window currently has focus, as defined by the operating system.
+		Messaging: Please change your web app manifest's 'gcm_sender_id' value to '103953800507' to use Firebase messaging. (messaging/incorrect-gcm-sender-id).
 
-Support
--------
+### Not receiving push notifications		
+* Check that you are running the example from a webserver (e.g. http://localhost) and not from the file system (e.g. file:///C:/web/WebPushNotifications-master/index.html);
 
-https://firebase.google.com/support/
+* Check that you have entered the right Firebase configurations;
 
-License
--------
+* Don't forget to give permissions for the push notifications when your browser requests them;
 
-© Google, 2016. Licensed under an [Apache-2](../LICENSE) license.
+* Make sure your webserver is properly configured to serve the file manifest.json (check if there are no 404 errors in your browsers Developers Tool network tab). IIS users may need to add the MIME type; 
+
+* If you're not using localhost make sure you are using the https protocol with a valid SSL certificate for the domain you are using;
+
+* Check if you have any other browser tab opened using the website you're testing. If you do, make sure that page has a Realtime connection established and is subscribing the push notification channel. Push notifications won't be displayed to users that are currently browsing the site that originated the push.  
+
+## Private channel vs Global channel
+If you want to control to which users you are sending each push you should use a private channel for each user. If you want to broadcast a push notification to all users you should use a global channel that every user subscribes.
+
+A mixed private/global channel strategy can also be used, it really depends on your use case.
+
+## On-line example
+You can test the Realtime Web Push Notifications [here](https://framework.realtime.co/demo/web-push).
